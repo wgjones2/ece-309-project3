@@ -1,0 +1,2 @@
+# Always LF: CRLF breaks tests/e2e/run_e2e.sh and the e2e byte counts.
+* text=auto eol=lf
