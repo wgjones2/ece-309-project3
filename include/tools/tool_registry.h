@@ -70,4 +70,26 @@ private:
     // Your buckets, your element count, and any private helpers you want
     // (for example a rehash function). Store std::unique_ptr<Tool> in the
     // buckets so that pointers handed out by find() survive a resize.
+
+	// separate chaining
+	//each bucket is the start of a singly linked list (a chain) of nodes
+	//each node owns one tool and owns the next node in its chain
+	struct Node {
+		//a std::unique_ptr<Tool> that owns the tool stored in this node
+		//a std::unique_ptr<Node> that owns the next node in the chain
+		//(the last node in a chain has nullptr here)
+	};
+
+	// constants
+	//a starting bucket count of 8 (a power of two, so a bucket index can use & instead of %)
+	//a max load factor of 0.75 (the table grows before it would go above this)
+
+	// data members
+	//a std::vector of std::unique_ptr<Node> with one entry per bucket
+	//each entry points to the first node of that bucket's chain (nullptr means the bucket is empty)
+	//a count of how many tools are stored, starting at 0
+
+	// private helpers
+	//a rehash function that takes a new bucket count and moves every node into the new buckets
+	//rehashing only moves node pointers, so the tools never move and pointers from find() stay valid
 };
