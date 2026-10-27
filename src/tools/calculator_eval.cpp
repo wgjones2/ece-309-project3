@@ -67,22 +67,58 @@ bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::st
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
+// Evaluates a sequence of CalcTokens and stores the result in "out".
+//returns true if the evaluation is successful, false otherwise
+//if an error occurs, 'error' is set to a descriptive message
+//results in log table should match
 bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::string* error) {
-	//make two stacks: one for values (doubles) and one for operators (CalcToken::Kind)
-	//any time the apply helper returns false, return false right away
-	//go through the tokens one at a time with a loop (no recursion):
-		//number: push its value onto the values stack
-		//left parenthesis: push it onto the ops stack
-		//right parenthesis: apply operators until the top of the ops stack is a left parenthesis
-			//if the ops stack runs out first, set the error to "malformed expression" and return false
-			//pop the left parenthesis off the ops stack
-		//plus, minus, times, or divide: while the ops stack is not empty and its top has a
-		//precedence greater than or equal to this operator's, apply it
-			//then push this operator onto the ops stack
-	//after the loop, apply every operator left on the ops stack
-	//if there is not exactly one value left, set the error to "malformed expression" and return false
-	//store the last value in out and return true
     std::stack<double> values;
     std::stack<CalcToken::Kind> ops;
+	for (std::size_t i = 0; i < tokens.size(); ++i) { //go through each token
+		CalcToken token = tokens[i]; //current token
+		if (token.kind == CalcToken::Kind::Number) { //if the token is a number
+			values.push(token.value); //push its value onto the values stack
+		} else if (token.kind == CalcToken::Kind::LParen) { //if the token is a left parenthesis
+			ops.push(token.kind); //push it onto the ops stack
+		} else if (token.kind == CalcToken::Kind::RParen) { //if the token is a right parenthesis
+			while (!ops.empty() && ops.top() != CalcToken::Kind::LParen) { //apply operators until the top is a left parenthesis
+				if (!apply(values, ops, error)) {
+					return false; //return false if apply_operator fails
+				}
+				ops.pop(); //pop the operator
+			}
+			if (ops.empty()) { //if no matching left parenthesis
+				*error = "malformed expression";
+				return false;
+			}
+			ops.pop(); //pop the left parenthesis
+		//if the token is an operator (plus, minus, times, divide)
+		} else if (token.kind == CalcToken::Kind::Plus || token.kind == CalcToken::Kind::Minus || token.kind == CalcToken::Kind::Times || token.kind == CalcToken::Kind::Divide) {
+			while (!ops.empty() && precedence(ops.top()) >= precedence(token.kind)) { //while the top of the ops stack has greater or equal precedence
+				if (!apply(values, ops, error)) { //return false if apply_operator fails
+					return false;
+				}
+				ops.pop(); //pop the operator
+			}
+			ops.push(token.kind); //push the current operator
+		} else {
+			*error = "malformed expression";
+			return false;
+		}
+	}
+	//after the loop, apply every operator left on the ops stack
+	while (!ops.empty()) { //while there are still operators on the stack
+		if (!apply(values, ops, error)) {
+			return false; //return false if apply_operator fails
+		}
+		ops.pop(); //pop the operator
+	}
+	//if there is not exactly one value left, set the error to "malformed expression" and return false
+	if (values.size() != 1) {
+		*error = "malformed expression";
+		return false;
+	}
+	//store the last value in out and return true
+	*out = values.top();
+	return true;
 }
