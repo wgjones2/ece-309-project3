@@ -11,18 +11,17 @@
 
 #include "../mini_test.h"
 #include "../test_helpers.h"     // TempDir, write_text, args1, ...
-
 #include "tools/calculator.h"
 #include "tools/tool_registry.h"
 #include "tools/workspace.h"
-
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace fs = std::filesystem;
+namespace fs = std::filesystem; // for convenience
 
 namespace {
 
@@ -48,7 +47,7 @@ bool eval(const std::string& expr, double* value, std::string* error) {
 
 }  // namespace
 
-// ---------------------------------------------------------------- examples
+// ---------------------------------------------------------------- examples given
 
 TEST(reg_add_and_find) {
     ToolRegistry r;
@@ -107,35 +106,88 @@ TEST(calc_division_by_zero) {
 
 // registry tests
 
+//Test that the registry rejects a null tool:
 TEST(reg_null_rejected) {
-	//make an empty registry
-	//check that adding nullptr returns false
-	//check that the size is still 0
+	ToolRegistry r; //make an empty registry
+	CHECK(!r.add(nullptr)); //check that adding nullptr returns false
+	CHECK(r.size() == 0); //check that the size is still 0
 }
 
+
+//Test registry for visiting each tool exactly once:
 TEST(reg_for_each_visits_each_once) {
 	//make a registry and add three NamedTools named "a", "b", and "c"
+	ToolRegistry r;
+	REQUIRE(r.add(std::make_unique<NamedTool>("a"))); // REQUIRE is used to ensure the add succeeds
+	REQUIRE(r.add(std::make_unique<NamedTool>("b")));
+	REQUIRE(r.add(std::make_unique<NamedTool>("c")));
 	//call for_each with a lambda that pushes each tool's name into a vector
+	std::vector<std::string> names; // vector to hold the names of the tools
+	r.for_each([&names](const Tool& t) {
+		names.push_back(t.name());
+	});
 	//sort the vector and check that it holds exactly "a", "b", and "c"
+	std::sort(names.begin(), names.end());//sort the names alphabetically
+	CHECK((names == std::vector<std::string>{"a", "b", "c"})); //check that the order is correct - exact match (extra parentheses keep the commas out of the macro)
 }
 
+
+//Test the registry with 10,000 tools:
 TEST(reg_10000_tools) {
-	//add "tool_0" and save the pointer that find("tool_0") returns
-	//add "tool_1" through "tool_9999"
-		//require each add to succeed
-		//check that the load factor is at most 1.0 after every add
-	//check that find() returns a non-null pointer for every name from "tool_0" to "tool_9999"
-	//check that find("tool_0") still returns the pointer saved at the start
-	//check that max_probe_length() is at most 64
-	//print bucket_count(), load_factor(), and max_probe_length()
+	ToolRegistry r; //make an empty registry
+	REQUIRE(r.add(std::make_unique<NamedTool>("tool_0"))); //add "tool_0" and save the pointer that find("tool_0") returns
+	const Tool* tool_0_ptr = r.find("tool_0"); //init
+	REQUIRE(tool_0_ptr != nullptr); // ensure that find("tool_0") returned a valid pointer
+	for (int i=1; i<10000; ++i) { //for all tools "tool_1" through "tool_9999"
+		std::string name = "tool_" + std::to_string(i); // construct the tool name "tool_i"
+		bool added = r.add(std::make_unique<NamedTool>(name)); // add the tool to the registry
+		REQUIRE(added); // require each add to succeed
+		CHECK(r.load_factor() <= 1.0); // check that the load factor is at most 1.0 after every add
+	}
+	for (int i=0; i<10000; ++i) { //for every tool "tool_0" through "tool_9999"
+		std::string name = "tool_" + std::to_string(i); //construct the tool name "tool_i"
+		const Tool* t = r.find(name); //find the tool by name
+		CHECK(t != nullptr); //make sure find() returned a valid pointer
+	}
+	//check that find("tool_0") still returns the pointer saved at the start:
+	CHECK(r.find("tool_0") == tool_0_ptr);
+	//check that max_probe_length() is at most 64:
+	CHECK(r.max_probe_length() <= 64);
+	//print bucket_count(), load_factor(), and max_probe_length():
+	std::cout << "bucket_count: " << r.bucket_count() << ", load_factor: " << r.load_factor() << ", max_probe_length: " << r.max_probe_length() << std::endl;
 }
 
+
+//Test how the weak hash s[0] + s.size() would spread the same 10,000 names:
 TEST(reg_alternative_hash) {
-	//fill a registry with "tool_0" through "tool_9999" and get its final bucket count
-	//make a vector of ints with one counter per bucket, all starting at 0
+	//fill a registry with "tool_0" through "tool_9999" and get its final bucket count:
+	ToolRegistry r; //make an empty registry
+	for (int i=0; i<10000; ++i) { //for all tools "tool_0" through "tool_9999"
+		std::string name = "tool_" + std::to_string(i); //construct the tool name "tool_i"
+		bool added = r.add(std::make_unique<NamedTool>(name)); //check if added
+		REQUIRE(added);
+	}
+	size_t bucket_count = r.bucket_count(); //get the final bucket count
+	std::vector<int> counters(bucket_count, 0); //one counter per bucket, all starting at 0
 	//for each name, add one to the counter at (first character + name length) % bucket count
+	for (int i=0; i<10000; ++i) { //for each name "tool_0" through "tool_9999"
+		std::string name = "tool_" + std::to_string(i); //construct the tool name "tool_i"
+		std::size_t first_char = static_cast<unsigned char>(name[0]); //get the first character as an unsigned value
+		std::size_t weak = first_char + name.length(); //compute the weak hash
+		std::size_t bucket = weak % bucket_count; //compute the bucket index
+		++counters[bucket]; //increment the counter for that bucket
+	}
 	//find the largest counter (the longest chain the weak hash would make)
+	int max_counter = 0; //set a default value for the largest counter - start at 0
+	for (std::size_t i = 0; i < counters.size(); ++i) { //for all buckets...
+		if (counters[i] > max_counter) { //check if the counter is larger than max_counter
+			max_counter = counters[i]; //change max counter if it is
+		}
+	}
 	//print it next to the registry's real max_probe_length()
+	std::cout << "weak hash max chain: " << max_counter << ", real max_probe_length: " << r.max_probe_length() << std::endl;
+	std::size_t weak_longest = static_cast<std::size_t>(max_counter); //convert the largest counter to size_t for comparison
+	CHECK(weak_longest >= r.max_probe_length()); //the weak hash's longest chain should be at least as long as the real max probe length
 }
 
 // workspace tests

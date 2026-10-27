@@ -10,7 +10,7 @@
 
 // Anonymous namespace for internal constants and helper functions
 namespace {
-// FNV-1a constants
+// FNV-1a constants - given
 	static constexpr std::uint64_t kFnvOffsetBasis = 1469598103934665603; //a 64-bit unsigned offset basis of 1469598103934665603
 	static constexpr std::uint64_t kFnvPrime = 1099511628211; //a 64-bit unsigned prime of 1099511628211
 }
@@ -99,6 +99,7 @@ void ToolRegistry::for_each(const std::function<void(const Tool&)>& fn) const {
 
 
 // Rehash private helper:
+//this function rehashes the registry to have a new number of buckets, redistributing all nodes according to the new bucket count
 void ToolRegistry::rehash(std::size_t new_bucket_count) {
 	std::vector<std::unique_ptr<Node>> new_buckets(new_bucket_count);
 	for (std::size_t i = 0; i < buckets_.size(); ++i) {

@@ -25,8 +25,10 @@
 
 | hash              | bucket_count | load_factor | longest chain |
 | ----------------- | ------------ | ----------- | ------------- |
-| FNV-1a            |              |             |               |
-| `s[0] + s.size()` |              |             |               |
+| FNV-1a            | 16384        | 0.6104      | 6             |
+| `s[0] + s.size()` | 16384        | 0.6104      | 9000          |
+
+With FNV-1a, the longest chain is 6 so a lookup checks 6 nodes at most. The weak hash only produces four difference values for the ames so one chain held up to 9000 tools where find turns into a linear search. The FNV-1a hash greatly improved speed.
 
 **Amoritized O(1):** Most adds just push a node onto the front of a chain. A resize costs O(n) because every node is relinked, but the table doubles each time so as it becomes a longer operation, it also becomes increasingly infrequent to perform. The total work for all resizes up to n tools is about 2n.
 

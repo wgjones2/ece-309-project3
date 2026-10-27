@@ -2,6 +2,8 @@
 Specs in `P3_spec.md`.
 This project builds off of project 2 to add tool calls.
 
+
+# Provided ReadMe:
 ## 1. Bring your P2 code
 Four files are copied directly while the rest utilizes the given code:
 
@@ -11,7 +13,6 @@ src/core/conversation.cpp        src/core/sentinel_scanner.cpp
 ```
 
 ## 2. Build and test (Linux / WSL2)
-
 ```bash
 cmake -S . -B build              # ASan + UBSan are on by default
 cmake --build build -j
@@ -25,7 +26,6 @@ To check that you compile with zero warnings, as the grader does, add
 `-DMH_WERROR=ON` to the configure line.
 
 ## 3. Try the harness
-
 ```bash
 ./build/miniharness --no-tools --script scripts/greeting.script   # works on day 1
 ./build/miniharness --tools                                       # needs your ToolRegistry
@@ -38,7 +38,6 @@ use their own copy in `tests/e2e/workspace/`. To start the demo over, delete
 that file.
 
 ## 4. What is yours
-
 | File | Status |
 |---|---|
 | `src/tools/tool_registry.cpp` and the private section of `include/tools/tool_registry.h` | **you implement** (45 pts) |
