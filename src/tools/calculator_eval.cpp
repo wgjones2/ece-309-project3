@@ -9,7 +9,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Precedence helper for operators:
-//times and divide are 2, plus and minus are 1, and a left parenthesis is 0 undefined is -1
+//times and divide are 2, plus and minus are 1, aleft parenthesis is 0, and undefined is -1
 namespace {
 	int precedence(CalcToken::Kind kind) { //check the precedence of the operator
 		if (kind == CalcToken::Kind::Times || kind == CalcToken::Kind::Divide) { //if the operator is times or divide
@@ -75,7 +75,7 @@ bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::strin
 	std::stack<double> values; //stack of numbers
 	std::stack<CalcToken::Kind> ops; //stack of operators and left parentheses
 	for (std::size_t i = 0; i < tokens.size(); ++i) { //go through each token
-		CalcToken token = tokens[i]; //current token
+		const CalcToken token = tokens[i]; //current token
 		if (token.kind == CalcToken::Kind::Number) { //if the token is a number
 			values.push(token.value); //push its value onto the values stack
 		} else if (token.kind == CalcToken::Kind::LParen) { //if the token is a left parenthesis

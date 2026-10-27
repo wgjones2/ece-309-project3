@@ -23,8 +23,8 @@
 
 namespace fs = std::filesystem; // for convenience
 
-namespace {
 
+namespace {
 // A tool whose name you choose — use it to fill the registry in tests.
 class NamedTool : public Tool {
 public:
@@ -44,10 +44,11 @@ bool eval(const std::string& expr, double* value, std::string* error) {
     if (!calc_tokenize(expr, &tokens, error)) return false;
     return calc_evaluate(tokens, value, error);
 }
+}  // namespace end
 
-}  // namespace
 
-// ---------------------------------------------------------------- examples given
+//////////////////////////////////////////////////////////////////////////////////
+// Example tests given:
 
 TEST(reg_add_and_find) {
     ToolRegistry r;
@@ -94,17 +95,9 @@ TEST(calc_division_by_zero) {
     CHECK(err == "division by zero");
 }
 
-// ------------------------------------------------------------- your tests
-//
-// Still to write (spec §6 has the full list). Suggested names:
-//   reg_null_rejected, reg_for_each_visits_each_once
-//   reg_10000_tools               REQUIRED: print bucket_count / load_factor /
-//                                 max_probe_length, check the bound
-//   reg_alternative_hash          REQUIRED: longest chain of a weak hash
-//   ws_<case>                     REQUIRED: every row of the table in spec §4.4
-//   calc_<case>                   left-to-right, parentheses, negatives
 
-// registry tests
+//////////////////////////////////////////////////////////////////////////////////
+// My own tests:
 
 //Test that the registry rejects a null tool:
 TEST(reg_null_rejected) {
@@ -167,7 +160,7 @@ TEST(reg_alternative_hash) {
 		bool added = r.add(std::make_unique<NamedTool>(name)); //check if added
 		REQUIRE(added);
 	}
-	size_t bucket_count = r.bucket_count(); //get the final bucket count
+	std::size_t bucket_count = r.bucket_count(); //get the final bucket count
 	std::vector<int> counters(bucket_count, 0); //one counter per bucket, all starting at 0
 	//for each name, add one to the counter at (first character + name length) % bucket count
 	for (int i=0; i<10000; ++i) { //for each name "tool_0" through "tool_9999"
@@ -321,46 +314,89 @@ TEST(ws_rejects_leave_and_return) {
 
 // calculator tests
 //these cover the rows of the spec §4.6 table plus two more
-//("2 + 3 * 4" and "1 / 0" are already in the examples above)
+//("2 + 3 * 4" and "1 / 0" are already in the provided examples)
 //each test makes a double for the value and a string for the error,
 //requires eval() to return true, and checks the value
 
 TEST(calc_left_to_right) {
 	//"10 - 4 - 3" gives 3
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("10 - 4 - 3", &val, &err)); //require eval() to return true
+	CHECK(val == 3); //check the value
 }
 
 TEST(calc_left_to_right_division) {
 	//"100 / 10 / 5" gives 2
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("100 / 10 / 5", &val, &err)); //require eval() to return true
+	CHECK(val == 2); //check the value
 }
 
 TEST(calc_parentheses) {
 	//"(2 + 3) * 4" gives 20
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("(2 + 3) * 4", &val, &err)); //require eval() to return true
+	CHECK(val == 20); //check the value
 }
 
 TEST(calc_parentheses_then_subtract) {
 	//"2 * (3 + 4) - 5" gives 9
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("2 * (3 + 4) - 5", &val, &err)); //require eval() to return true
+	CHECK(val == 9); //check the value
 }
 
 TEST(calc_negatives) {
 	//"-3 * -3" gives 9
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("-3 * -3", &val, &err)); //require eval() to return true
+	CHECK(val == 9); //check the value
 }
 
 TEST(calc_decimal_result) {
 	//"7 / 2" gives 3.5
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval("7 / 2", &val, &err)); //require eval() to return true
+	CHECK(val == 3.5); //check the value
 }
 
 TEST(calc_division_by_zero_in_parens) {
 	//"1 / (2 - 2)" makes eval() return false with the error "division by zero"
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	CHECK(!eval("1 / (2 - 2)", &val, &err)); //check that eval() returns false
+	CHECK(err == "division by zero"); //check the error
 }
 
 TEST(calc_long_sum) {
 	//build a string of "1" followed by 20,000 copies of "+1"
+	std::string expr = "1";
+	for (int i = 0; i < 20000; ++i) {
+		expr += "+1";
+	}
 	//it gives 20001 (this checks that the evaluator uses a loop and not recursion)
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval(expr, &val, &err)); //require eval() to return true
+	CHECK(val == 20001); //check the value
 }
 
 TEST(calc_deep_nesting) {
 	//build a string of 5,000 "(" characters, then "1", then 5,000 ")" characters
-	//it gives 1
+	std::string expr(5000, '('); //create a string with 5,000 opening parentheses
+	expr += "1"; //insert the "1" in the middle of the parentheses
+	expr += std::string(5000, ')'); //append 5,000 closing parentheses
+	//it should give 1
+	double val = 0; //create a double for the value
+	std::string err; //create a string for the error
+	REQUIRE(eval(expr, &val, &err)); //require eval() to return true
+	CHECK(val == 1); //check the value
 }
 
-int main(int argc, char** argv) { return mt::run_all(argc, argv); }
+int main(int argc, char** argv) { return mt::run_all(argc, argv); } // run all tests
