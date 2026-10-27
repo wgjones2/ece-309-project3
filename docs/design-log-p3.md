@@ -1,13 +1,19 @@
 # Project 3 Design Log
 
 **Author:** Walter Jones · **P2 code used:** My own from project 2 and professor's code referenced.
-**Tools used:** AI used for pseudocode check and reformat
+**Tools used:** Claude used to review / suggest changes to pseudocode structure - VSCode autocomplete utilized while writing code
 
 <!-- 500–800 words. An argument, not a diary: say what you decided, what
      you rejected, and what evidence backs it up. Delete these comments
      before submitting. -->
 
 ## 1. Hash table
+
+**The Collision Strategy:**
+
+**Hash Functions:**
+
+**Load Factor Threshold:** The threshold is a load factor of 0.75. The default table starts with 8 buckets. Each add  increases utilization. If another tool addition would push the ratio of utilization to bucket count over 0.75, then the bucket count doubles first. Every node is moved into the new buckets with a recomputed index. Because it checks before it never goes above 0.75 after the add function returns. 0.75 was choosen because its the lower safer limit of the suggest range in the spec. The overall memory impact is small and so it is not a big deal to have higher overhead.
 
 <!-- Chaining or open addressing, and why. Your hash function, load-factor
      threshold, and resize policy. Paste your 10,000-tool numbers
