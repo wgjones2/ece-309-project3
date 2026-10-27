@@ -200,52 +200,124 @@ TEST(reg_alternative_hash) {
 
 TEST(ws_accepts_dot_and_double_slash) {
 	//"./notes//todo.txt" is accepted as root / "notes" / "todo.txt"
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve("./notes//todo.txt", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path() / "notes" / "todo.txt"); //check the output path
 }
 
 TEST(ws_accepts_dot) {
 	//"." is accepted as root
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve(".", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path()); //check the output path
 }
 
 TEST(ws_accepts_inner_dotdot) {
 	//"a/../b" is accepted as root / "b"
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve("a/../b", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path() / "b"); //check the output path
 }
 
 TEST(ws_accepts_dotdot_back_to_root) {
 	//"a/.." is accepted as root
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve("a/..", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path()); //check the output path
 }
 
 TEST(ws_accepts_missing_path) {
 	//"new/dir/file.txt" (which does not exist) is accepted as root / "new" / "dir" / "file.txt"
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve("new/dir/file.txt", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path() / "new" / "dir" / "file.txt"); //check the output path
 }
 
 TEST(ws_accepts_dots_in_name) {
 	//"my..notes.txt" is accepted as root / "my..notes.txt"
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	REQUIRE(ws.resolve("my..notes.txt", &out, &reason)); //require resolve() to return true
+	CHECK(out == tmp.path() / "my..notes.txt"); //check the output path
 }
 
 TEST(ws_rejects_empty) {
 	//"" is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	CHECK(!ws.resolve("", &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "empty path"); //check the reason
 }
 
 TEST(ws_rejects_nul) {
-	//std::string("notes") + '\0' + "/x" is rejected
-	//(a plain string literal would be cut off at the '\0')
+	//path containing NUL is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	std::string path = std::string("notes") + '\0' + "/x"; //build the path with a NUL character
+	CHECK(!ws.resolve(path, &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "path contains NUL"); //check the reason
+
 }
 
 TEST(ws_rejects_absolute) {
-	//"/etc/passwd" is rejected
+	//absolute path is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	CHECK(!ws.resolve("/etc/passwd", &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "absolute path"); //check the reason
 }
 
 TEST(ws_rejects_dotdot) {
 	//".." is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	CHECK(!ws.resolve("..", &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "path escapes workspace"); //check the reason
 }
 
 TEST(ws_rejects_climb_past_root) {
 	//"a/../../b" is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	CHECK(!ws.resolve("a/../../b", &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "path escapes workspace"); //check the reason
 }
 
 TEST(ws_rejects_leave_and_return) {
-	//root the Workspace at the TempDir's path / "ws" for this test
-	//"notes/../../ws/notes/todo.txt" is rejected, even though it ends up back inside the workspace
+	//"a/../b" is rejected
+	TempDir tmp; //create a temporary directory
+	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	fs::path out; //create an fs::path for the output
+	std::string reason; //create a string for the reason
+	CHECK(!ws.resolve("a/../b", &out, &reason)); //check that resolve() returns false
+	CHECK(reason == "path escapes workspace"); //check the reason
 }
 
 // calculator tests
