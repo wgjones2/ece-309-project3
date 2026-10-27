@@ -71,25 +71,25 @@ private:
     // (for example a rehash function). Store std::unique_ptr<Tool> in the
     // buckets so that pointers handed out by find() survive a resize.
 
-	// separate chaining
+	// Separate chaining:
 	//each bucket is the start of a singly linked list (a chain) of nodes
-	//each node owns one tool and owns the next node in its chain
+	//each node has tool and next node in its chain
 	struct Node {
-		//a std::unique_ptr<Tool> that owns the tool stored in this node
-		//a std::unique_ptr<Node> that owns the next node in the chain
+        std::unique_ptr<Tool> tool; // owns the tool stored in this node
+        std::unique_ptr<Node> next; // owns the next node in the chain (nullptr if this is the last node)
 		//(the last node in a chain has nullptr here)
 	};
 
-	// constants
-	//a starting bucket count of 8 (a power of two, so a bucket index can use & instead of %)
-	//a max load factor of 0.75 (the table grows before it would go above this)
+	// Constants:
+	static constexpr std::size_t kInitialBucketCount = 8; //a starting bucket count of 8
+	static constexpr double kMaxLoadFactor = 0.75; //a max load factor of 0.75 (the table grows before it grows beyond this)
 
-	// data members
-	//a std::vector of std::unique_ptr<Node> with one entry per bucket
-	//each entry points to the first node of that bucket's chain (nullptr means the bucket is empty)
-	//a count of how many tools are stored, starting at 0
+	// Data members:
+	std::vector<std::unique_ptr<Node>> buckets_; // one entry per bucket
+	std::size_t size_ = 0; // count of how many tools are stored - start w/ 0
+	//each entry points to the first node of that bucket's chain (nullptr meaning empty)
 
-	// private helpers
-	//a rehash function that takes a new bucket count and moves every node into the new buckets
-	//rehashing only moves node pointers, so the tools never move and pointers from find() stay valid
+	// Private helpers:
+	void rehash(std::size_t new_bucket_count); // moves every node into new buckets - preserve tool pointers
+	//rehashing will only move node pointers and so the tools never move and pointers remain valid
 };
