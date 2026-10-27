@@ -42,13 +42,13 @@ bool ToolRegistry::add(std::unique_ptr<Tool> tool) { // add a new tool to the re
 	if (tool == nullptr) {// if tool null
 		return false;  // return flase
 	}
-	std::string_view name = tool->name(); //get the tool's name
-	Tool* existing_tool = find(name) // check if a tool with the same name already exists
+	std::string name = tool->name(); //get the tool's name
+	Tool* existing_tool = find(name); // check if a tool with the same name already exists
 	if (existing_tool != nullptr) { // if a tool with that name is already stored
 		return false; //return false
 	} //note: the new tool is destroyed on its own when it goes out of scope
 	//if adding one more tool would push the load factor above the max load factor, rehash to double the bucket count first
-	double new_count = static_cast<double>(++size_); // get a new count variable without touching the actual size_
+	double new_count = static_cast<double>(size_ + 1); // get a new count variable without touching the actual size_
 	double bucket_total = static_cast<double>(buckets_.size()); // get the total number of buckets as a double (also static cast)
 	double next_load_factor = new_count / bucket_total; //find the load factor of the table if this tool were added
 	if (next_load_factor > kMaxLoadFactor) { //if it is too big
@@ -58,7 +58,7 @@ bool ToolRegistry::add(std::unique_ptr<Tool> tool) { // add a new tool to the re
 	//make a new node, move the tool into it, and put the node at the front of that bucket's chain
 	std::unique_ptr<Node> new_node = std::make_unique<Node>();
 	new_node->tool = std::move(tool); //transfer ownership of the tool to the new node
-	new_node->next = std::move(buckets[bucket_index]); //old first becomes the next node after the new node
+	new_node->next = std::move(buckets_[bucket_index]); //old first becomes the next node after the new node
 	buckets_[bucket_index] = std::move(new_node); //new node becomes the first node in the bucket's chain
 	++size_; //add one to the tool count
     return true; // return true on successful addition
@@ -102,13 +102,13 @@ void ToolRegistry::for_each(const std::function<void(const Tool&)>& fn) const {
 void ToolRegistry::rehash(std::size_t new_bucket_count) {
 	std::vector<std::unique_ptr<Node>> new_buckets(new_bucket_count);
 	for (std::size_t i = 0; i < buckets_.size(); ++i) {
-		Node* current = buckets_[i].get();
+		Node* current = buckets_[i].release(); // take the head node away from the old bucket so it has one owner
 		while (current != nullptr) { // while the current node is not null
 			Node* next = current->next.release();
 			std::size_t new_index = hash(current->tool->name()) % new_bucket_count; // compute the new bucket index
 			current->next = std::move(new_buckets[new_index]); // insert at the front of the new bucket's chain
-			new_buckets[new_index].reset(current) // set the new bucket's head to the current node
-			current = next // move to the next node in the old chain
+			new_buckets[new_index].reset(current); // set the new bucket's head to the current node
+			current = next; // move to the next node in the old chain
 		}
 	}
 	buckets_ = std::move(new_buckets); //replace the old buckets with the new ones
@@ -131,7 +131,7 @@ double ToolRegistry::load_factor() const noexcept {
 //Max probe length - returns the length of the longest chain in the registry
 std::size_t ToolRegistry::max_probe_length() const {
 	std::size_t max_length = 0; // keep track of the longest chain - 0 defualt
-	for (std::size_t i = 0; i < buckets_.size(); +i) { // for each bucket
+	for (std::size_t i = 0; i < buckets_.size(); ++i) { // for each bucket
 		std::size_t length = 0; //set current chain length to 0 - init
 		Node* current = buckets_[i].get(); //get first node of the current bucket's chain
 		while (current != nullptr) { //count the nodes in the chain until null
