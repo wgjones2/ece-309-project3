@@ -5,32 +5,70 @@
 // worked trace in Appendix C. std::stack or std::vector are both fine.
 
 #include "tools/calculator.h"
-
 #include <stack>
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//Precedence helper for operators:
+//times and divide are 2, plus and minus are 1, and a left parenthesis is 0 undefined is -1
 namespace {
+	int precedence(CalcToken::Kind kind) { //check the precedence of the operator
+		if (kind == CalcToken::Kind::Times || kind == CalcToken::Kind::Divide) { //if the operator is times or divide
+			return 2; //times and divide have precedence 2
+		} else if (kind == CalcToken::Kind::Plus || kind == CalcToken::Kind::Minus) { //if the operator is plus or minus
+			return 1; //plus and minus have precedence 1
+		} else if (kind == CalcToken::Kind::LParen) { //if the operator is a left parenthesis
+			return 0; //left parenthesis has precedence 0
+		}
+		return -1; //otherwise, the operator has no defined precedence - return -1
+	}
 
-// precedence helper
-//takes an operator kind and returns its precedence
-//times and divide are 2, plus and minus are 1, and a left parenthesis is 0
 
-// apply helper
-//takes the values stack, the ops stack, and the error string
-//if the ops stack is empty or there are fewer than two values,
-//set the error to "malformed expression" and return false
-//pop the operator, then pop the right value, then pop the left value
-//(the right value comes off first)
-//for plus, minus, and times, push the result of left op right onto the values stack
-//for divide, if the right value is 0, set the error to "division by zero" and return false
-//otherwise push left divided by right onto the values stack
-//if the operator is a left parenthesis (one that was never closed),
-//set the error to "malformed expression" and return false
-//return true
+// Apply helper:
+//applies the operator on top of the ops stack to the top two values on the values stack.
+//returns true if successful, false if there is an error (malformed expression or division by zero).
+bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::string* error) { //take in the values stack, the ops stack, and the error string
+	if (ops.empty() || values.size() < 2) { //if the ops stack is empty or there are fewer than two values
+		*error = "malformed expression"; //throw an error: malformed expression
+		return false; //exit early due to malformed expression
+	}
+	CalcToken::Kind op = ops.top(); //get the operator from the top of the ops stack
+	ops.pop(); //remove the operator from the ops stack
+	double right = values.top(); //get the right value from the top of the values stack
+	values.pop(); //remove the right value from the values stack
+	double left = values.top(); //get the left value from the top of the values stack
+	values.pop(); //remove the left value from the values stack
+	switch (op) { //depending on op:
+		case CalcToken::Kind::Plus: //if the operator is plus
+			values.push(left + right); //push the result of left + right onto the values stack
+			break;
+		case CalcToken::Kind::Minus: //if the operator is minus
+			values.push(left - right); //push the result of left - right onto the values stack
+			break;
+		case CalcToken::Kind::Times: //if the operator is times
+			values.push(left * right); //push the result of left * right onto the values stack
+			break;
+		case CalcToken::Kind::Divide: //if the operator is divide
+			if (right == 0.0) { //check for division by zero
+				*error = "division by zero"; //throw an error: division by zero
+				return false; //exit early due to division by zero
+			}
+			values.push(left / right); //otherwise, push the result of left / right onto the values stack
+			break;
+		case CalcToken::Kind::LParen: //if the operator is a left parenthesis (one that was never closed)
+			*error = "malformed expression"; //throw an error: malformed expression
+			return false; //exit early due to malformed expression
+		default: //error by default: unknown operator
+			*error = "malformed expression";
+			return false;
+	}
+	return true; //true for successful application of the operator - any fail breaks early
+}
+} // namespace end
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-} // namespace
 
-bool calc_evaluate(const std::vector<CalcToken>& /*tokens*/, double* /*out*/,
-                   std::string* error) {
+
+bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::string* error) {
 	//make two stacks: one for values (doubles) and one for operators (CalcToken::Kind)
 	//any time the apply helper returns false, return false right away
 	//go through the tokens one at a time with a loop (no recursion):
@@ -45,6 +83,6 @@ bool calc_evaluate(const std::vector<CalcToken>& /*tokens*/, double* /*out*/,
 	//after the loop, apply every operator left on the ops stack
 	//if there is not exactly one value left, set the error to "malformed expression" and return false
 	//store the last value in out and return true
-    *error = "calc_evaluate not implemented yet";   // TODO
-    return false;
+    std::stack<double> values;
+    std::stack<CalcToken::Kind> ops;
 }
