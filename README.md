@@ -1,22 +1,13 @@
 # ECE 309 · Project 3 starter — Tool Use and the Tool Registry
-
-Read `P3_spec.md` (in this folder) first. This file only covers setting up the repo.
+Specs in `P3_spec.md`.
+This project builds off of project 2 to add tool calls.
 
 ## 1. Bring your P2 code
-
-Copy four files from your P2 repo (details in `src/core/README.md`):
+Four files are copied directly while the rest utilizes the given code:
 
 ```
 include/core/conversation.h      include/core/sentinel_scanner.h
 src/core/conversation.cpp        src/core/sentinel_scanner.cpp
-```
-
-Do **not** copy `message.h`; the P3 one adds `Role::Tool`.
-
-If your P2 code doesn't work, build against the instructor's reference instead:
-
-```bash
-cmake -S . -B build -DUSE_P2_REFERENCE=ON
 ```
 
 ## 2. Build and test (Linux / WSL2)
