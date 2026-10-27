@@ -205,7 +205,7 @@ TEST(ws_accepts_dot_and_double_slash) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve("./notes//todo.txt", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path() / "notes" / "todo.txt"); //check the output path
+	CHECK(out == ws.root() / "notes" / "todo.txt"); //check the output path
 }
 
 TEST(ws_accepts_dot) {
@@ -215,7 +215,7 @@ TEST(ws_accepts_dot) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve(".", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path()); //check the output path
+	CHECK(out == ws.root()); //check the output path
 }
 
 TEST(ws_accepts_inner_dotdot) {
@@ -225,7 +225,7 @@ TEST(ws_accepts_inner_dotdot) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve("a/../b", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path() / "b"); //check the output path
+	CHECK(out == ws.root() / "b"); //check the output path
 }
 
 TEST(ws_accepts_dotdot_back_to_root) {
@@ -235,7 +235,7 @@ TEST(ws_accepts_dotdot_back_to_root) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve("a/..", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path()); //check the output path
+	CHECK(out == ws.root()); //check the output path
 }
 
 TEST(ws_accepts_missing_path) {
@@ -245,7 +245,7 @@ TEST(ws_accepts_missing_path) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve("new/dir/file.txt", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path() / "new" / "dir" / "file.txt"); //check the output path
+	CHECK(out == ws.root() / "new" / "dir" / "file.txt"); //check the output path
 }
 
 TEST(ws_accepts_dots_in_name) {
@@ -255,7 +255,7 @@ TEST(ws_accepts_dots_in_name) {
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
 	REQUIRE(ws.resolve("my..notes.txt", &out, &reason)); //require resolve() to return true
-	CHECK(out == tmp.path() / "my..notes.txt"); //check the output path
+	CHECK(out == ws.root() / "my..notes.txt"); //check the output path
 }
 
 TEST(ws_rejects_empty) {
@@ -277,7 +277,6 @@ TEST(ws_rejects_nul) {
 	std::string path = std::string("notes") + '\0' + "/x"; //build the path with a NUL character
 	CHECK(!ws.resolve(path, &out, &reason)); //check that resolve() returns false
 	CHECK(reason == "path contains NUL"); //check the reason
-
 }
 
 TEST(ws_rejects_absolute) {
@@ -311,12 +310,12 @@ TEST(ws_rejects_climb_past_root) {
 }
 
 TEST(ws_rejects_leave_and_return) {
-	//"a/../b" is rejected
+	//"notes/../../ws/notes/todo.txt" is rejected even though it ends up back inside the workspace
 	TempDir tmp; //create a temporary directory
-	Workspace ws(tmp.path()); //create a Workspace rooted at the TempDir's path
+	Workspace ws(tmp.path() / "ws"); //create a Workspace rooted at the TempDir's path / "ws"
 	fs::path out; //create an fs::path for the output
 	std::string reason; //create a string for the reason
-	CHECK(!ws.resolve("a/../b", &out, &reason)); //check that resolve() returns false
+	CHECK(!ws.resolve("notes/../../ws/notes/todo.txt", &out, &reason)); //check that resolve() returns false
 	CHECK(reason == "path escapes workspace"); //check the reason
 }
 

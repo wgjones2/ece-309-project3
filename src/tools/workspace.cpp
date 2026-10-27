@@ -39,10 +39,10 @@ bool Workspace::resolve(std::string_view user_path, fs::path* out, std::string* 
 		return false; //return false
 	}
 	//step 6: if the normalized path is just ".", the result is root(), otherwise join root() with the normalized path
-    if (normalized == ".") { //if the normalized path is just "."
-        *out = root(); //set the result to root()
-    } else { //otherwise,
-        *out = root() / normalized; //join root() with the normalized path
-    }
-    return true;//return true if the path was successfully resolved
+	if (normalized == ".") { //if the normalized path is just "."
+		*out = root(); //set the result to root()
+	} else { //otherwise,
+		*out = root() / normalized; //join root() with the normalized path
+	}
+	return true; //return true if the path was successfully resolved
 }
