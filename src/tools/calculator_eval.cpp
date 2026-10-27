@@ -28,7 +28,7 @@ namespace {
 //returns true if successful, false if there is an error (malformed expression or division by zero).
 bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::string* error) { //take in the values stack, the ops stack, and the error string
 	if (ops.empty() || values.size() < 2) { //if the ops stack is empty or there are fewer than two values
-		*error = "malformed expression"; //throw an error: malformed expression
+		*error = "malformed expression"; //set the error (no exception): malformed expression
 		return false; //exit early due to malformed expression
 	}
 	CalcToken::Kind op = ops.top(); //get the operator from the top of the ops stack
@@ -49,13 +49,13 @@ bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::st
 			break;
 		case CalcToken::Kind::Divide: //if the operator is divide
 			if (right == 0.0) { //check for division by zero
-				*error = "division by zero"; //throw an error: division by zero
+				*error = "division by zero"; //set the error (no exception): division by zero
 				return false; //exit early due to division by zero
 			}
 			values.push(left / right); //otherwise, push the result of left / right onto the values stack
 			break;
 		case CalcToken::Kind::LParen: //if the operator is a left parenthesis (one that was never closed)
-			*error = "malformed expression"; //throw an error: malformed expression
+			*error = "malformed expression"; //set the error (no exception): malformed expression
 			return false; //exit early due to malformed expression
 		default: //error by default: unknown operator
 			*error = "malformed expression";
@@ -72,8 +72,8 @@ bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::st
 //if an error occurs, 'error' is set to a descriptive message
 //results in log table should match
 bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::string* error) {
-    std::stack<double> values;
-    std::stack<CalcToken::Kind> ops;
+	std::stack<double> values; //stack of numbers
+	std::stack<CalcToken::Kind> ops; //stack of operators and left parentheses
 	for (std::size_t i = 0; i < tokens.size(); ++i) { //go through each token
 		CalcToken token = tokens[i]; //current token
 		if (token.kind == CalcToken::Kind::Number) { //if the token is a number
@@ -82,10 +82,9 @@ bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::strin
 			ops.push(token.kind); //push it onto the ops stack
 		} else if (token.kind == CalcToken::Kind::RParen) { //if the token is a right parenthesis
 			while (!ops.empty() && ops.top() != CalcToken::Kind::LParen) { //apply operators until the top is a left parenthesis
-				if (!apply(values, ops, error)) {
-					return false; //return false if apply_operator fails
+				if (!apply(values, ops, error)) { //apply pops the operator itself
+					return false; //return false if apply fails
 				}
-				ops.pop(); //pop the operator
 			}
 			if (ops.empty()) { //if no matching left parenthesis
 				*error = "malformed expression";
@@ -95,10 +94,9 @@ bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::strin
 		//if the token is an operator (plus, minus, times, divide)
 		} else if (token.kind == CalcToken::Kind::Plus || token.kind == CalcToken::Kind::Minus || token.kind == CalcToken::Kind::Times || token.kind == CalcToken::Kind::Divide) {
 			while (!ops.empty() && precedence(ops.top()) >= precedence(token.kind)) { //while the top of the ops stack has greater or equal precedence
-				if (!apply(values, ops, error)) { //return false if apply_operator fails
-					return false;
+				if (!apply(values, ops, error)) { //apply pops the operator itself
+					return false; //return false if apply fails
 				}
-				ops.pop(); //pop the operator
 			}
 			ops.push(token.kind); //push the current operator
 		} else {
@@ -108,10 +106,9 @@ bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::strin
 	}
 	//after the loop, apply every operator left on the ops stack
 	while (!ops.empty()) { //while there are still operators on the stack
-		if (!apply(values, ops, error)) {
-			return false; //return false if apply_operator fails
+		if (!apply(values, ops, error)) { //apply pops the operator itself
+			return false; //return false if apply fails
 		}
-		ops.pop(); //pop the operator
 	}
 	//if there is not exactly one value left, set the error to "malformed expression" and return false
 	if (values.size() != 1) {
