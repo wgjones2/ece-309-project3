@@ -1,6 +1,15 @@
 # ECE 309 · Project 3 starter — Tool Use and the Tool Registry
-Specs in `P3_spec.md`.
-This project builds off of project 2 to add tool calls.
+Specs in `P3_spec.md`. Design decisions and measurements are in `docs/design-log-p3.md`.
+
+This project builds off of project 2 to add tool calls. The model can now call tools (a calculator, plus reading, writing, and listing files) through a registry, and each result is fed back into the conversation as a message.
+
+For this project, I implementd:
+- Tool Registry: a hast table that uses seperate chaining abd a 64-bit FNV-1a. It doubles at a 0.75 load factor. Tested with 10000 tools, the longest chain is 6.
+- Workspace: This is a text-only path check that keeps file tools inside the workspace folder only.
+- Calc Evaluate: An evaluator for mathematical functions. Follows standard precedance ruels and supports addition, subtraction, multiplication, division, parenthesis, and division by zero.
+- New Tests: This project retains tests relating to project 2, however it also adds 30 tests for the registry, the workspace, and the calculator. All passed.
+
+Lastly, there are zero warnings under AddressSanitizer and UndefinedBehaviorSanitizer.
 
 
 # Provided ReadMe:
