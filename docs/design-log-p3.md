@@ -1,64 +1,53 @@
 # Project 3 Design Log
 
-**Author:** Walter Jones · **P2 code used:** My own from project 2 and professor's code referenced.
-**Tools used:** Claude used to review / suggest changes to pseudocode structure after my first draft before starting to write code - VSCode autocomplete utilized while writing code
-**Additional Note:** I neglected to commit the changes during the pseudocode stage to git while I was doing them. However, the change log is still present and shows the gradual set up work.
-
-<!-- 500–800 words. An argument, not a diary: say what you decided, what
-     you rejected, and what evidence backs it up. Delete these comments
-     before submitting. -->
+**Author:** Walter Jones · **P2 code used:** My own conversation.h, sentinel_scanner.h, conversation.cpp, and sentinel_scanner.cpp, copied unchanged from Project 2.
+**Tools used:** Claude to review my pseudocode structure before I started writing code; VS Code autocomplete while writing code; Claude for final debugging.
+**Additional Note:** I neglected to commit during the pseudocode stage, but the commits show the history despite its late addition to github.
 
 ## 1. Hash table
 
-**The Collision Strategy:** I utilized seperate chaining. Each bucket holds the head of a single linked list of nodes. Each node holds a tool through a unique smart pointer as well as a unique pointer to the next node. A new tool goes at the front of the chain, therefore, inserting is constant time. I chose chaining over linear probing because it is simple, not impactful to size, quick to search, and because this project never removes tools. The main downside being the extra memory per node doesn't really matter at the size this project uses. It's quicker to search than probing because there are no long probe runs.
+**The Collision Strategy:** I utilized separate chaining. Each bucket holds the head of a singly linked list of nodes, and each node owns its tool and the next node through a std::unique_ptr. A new tool goes at the front of its chain, so inserting is constant time. I chose chaining over linear probing because it is simple, avoids long probe runs, and never runs out of room. The main downside, the extra memory per node, doesn't really matter at this size.
 
-**Hash Functions:** The hash is 64 bit FNV-1a. The hash function needs a starting state before it reads any data and it starts it. For each charactor, it XORs the byte, then multiplies by FNV prime. In this way, every character changes the result and it happens after each XOR so order matters. The hash function returns the full value and the bucket index is seperately taken with "hash & (bucket_count - 1)" which is bitwise and quick. For that, bucket_count is strictly a power of 2 but is much quicker than hash % 8. 
+**Hash Function:** The hash is 64-bit FNV-1a. It starts from the FNV offset basis, and for each character it XORs in the byte and then multiplies by the FNV prime. Every character changes the result, and because the multiply happens after each XOR, order matters. The function returns the full value; add() reduces it with "hash & (bucket_count - 1)", while find() and rehash() use the equivalent "hash % bucket_count". These match because bucket_count is always a power of 2.
 
-**Load Factor Threshold:** The threshold is a load factor of 0.75. The default table starts with 8 buckets. Each add increases utilization. If another tool addition would push the ratio of the number of tools to bucket count over 0.75, then the bucket count doubles first. Every node is moved into the new buckets with a recomputed index. Because it checks before it never goes above 0.75 after the add function returns. 0.75 was chosen because its the lower safer limit of the suggested range in the spec. The overall memory impact is small and so it is not a big deal to have higher overhead.
+**Load Factor Threshold:** The threshold is 0.75, and the table starts with 8 buckets. If adding another tool would push the ratio of tools to buckets over 0.75, the bucket count doubles first and every node is moved into the new buckets with a recomputed index. Because it checks before inserting, the load factor never goes above 0.75 after add() returns. I chose 0.75 because it is the lower, safer end of the range the spec suggests for chaining.
 
 **Measurements Table:**
-
-<!-- Chaining or open addressing, and why. Your hash function, load-factor
-     threshold, and resize policy. Paste your 10,000-tool numbers
-     (bucket_count, load_factor, max_probe_length) next to the alternative
-     hash's longest chain. Explain briefly why add() is amortized O(1). -->
 
 | hash              | bucket_count | load_factor | longest chain |
 | ----------------- | ------------ | ----------- | ------------- |
 | FNV-1a            | 16384        | 0.6104      | 6             |
 | `s[0] + s.size()` | 16384        | 0.6104      | 9000          |
 
-With FNV-1a, the longest chain is 6 so a lookup checks 6 nodes at most. The weak hash only produces four difference values for the ames so one chain held up to 9000 tools where find turns into a linear search. The FNV-1a hash greatly improved speed.
+With FNV-1a, the longest chain is 6, so a lookup checks at most 6 nodes. The weak hash only produces four different values for these names, so one chain would hold 9000 tools and find() would become a linear search. FNV-1a makes the worst-case lookup 1500 times shorter.
 
-**Amoritized O(1):** Most adds just push a node onto the front of a chain. A resize costs O(n) because every node is relinked, but the table doubles each time so as it becomes a longer operation, it also becomes increasingly infrequent to perform. The total work for all resizes up to n tools is about 2n.
+**Amortized O(1):** Most adds just push a node onto the front of a chain. A resize costs O(n) because every node is relinked, but since the table doubles each time, resizes become rarer as they become more expensive. The total work for all resizes up to n tools is about 2n, so each add is O(1) on average.
 
 ## 2. Pointer stability
 
-<!-- Why does a Tool* returned by find() survive a resize in your design? -->
+find() returns "node->tool.get()", which is the address of the Tool itself, not of the node or bucket. During a rehash, only the nodes are relinked into the new bucket vector; the Tool objects are never moved or copied. Because a Tool's address never changes, any pointer taken before a resize stays valid. The "reg_10000_tools" test checks this by comparing the pointer for "tool_0" before and after all 10,000 adds.
 
 ## 3. Calculator trace
 
-<!-- Trace the values and ops stacks for 2 * (3 + 4) - 5, one token at a
-     time, in your own words. -->
+| token | action                                                | values (bottom → top) | ops (bottom → top) |
+| ----- | ----------------------------------------------------- | --------------------- | ------------------ |
+| `2`   | push 2 onto values                                    | 2                     | (nothing)          |
+| `*`   | ops is empty, so push * onto ops                      | 2                     | *                  |
+| `(`   | push ( onto ops                                       | 2                     | * (                |
+| `3`   | push 3 onto values                                    | 2 3                   | * (                |
+| `+`   | top is (, so nothing is applied; push +               | 2 3                   | * ( +              |
+| `4`   | push 4 onto values                                    | 2 3 4                 | * ( +              |
+| `)`   | apply + (3+4=7), push 7, and pop (                    | 2 7                   | *                  |
+| `-`   | * has higher precedence, so apply it (2*7=14); push - | 14                    | -                  |
+| `5`   | push 5 onto values                                    | 14 5                  | -                  |
+| end   | apply - (14-5=9) and push 9                           | 9                     | (nothing)          |
 
-| token | action                                                                 | values (bottom → top) | ops (bottom → top) |
-| ----- | ---------------------------------------------------------------------- | --------------------- | ------------------ |
-| `2`   | push 2 onto values                                                     | 2                     | (nothing)          |
-| `*`   | ops is empty so push * to ops                                          | 2                     | *                  |
-| `(`   | push ( to ops                                                          | 2                     | * (                |
-| `3`   | push 3 to values                                                       | 2 3                   | * (                |
-| `+`   | top is (, so nothing is yet applied and push +                         | 2 3                   | * ( +              |
-| `4`   | push 4                                                                 | 2 3 4                 | * ( +              |
-| `)`   | apply the + (3+4=7), push 7, and pop (                                 | 2 7                   | *                  |
-| `-`   | * has higher precedence so it is applied (2*7=14), store 14 and push - | 14                    | -                  |
-| `5`   | push 5                                                                 | 14 5                  | -                  |
-| end   | apply the - (14-5=9) and push 9 to values                              | 9                     | (nothing)          |
-
-Therefore, the answer is 9
+Therefore, the answer is 9.
 
 ## 4. Errors as values
 
-<!-- Why do tools, resolve() and calc_evaluate() return errors instead of
-     throwing? When IS an exception the right choice? -->
+Errors are returned as values rather than thrown as exceptions because, in an agentic AI loop, a tool failing is not abnormal. The failure is fed back into the conversation, so the model can read why it failed and try something different. Exceptions are for actual bugs in the code. For example, json_value.cpp throws std::logic_error when as_string() is called on a value that is not a string, since only a programming mistake can cause that. The dispatcher still catches anything a tool throws as a last line of defense. My code returns failures by design: add() returns false for a duplicate, resolve() returns false with a reason, and calc_evaluate() reports "division by zero".
 
 ## 5. What I would design differently
+
+I hand-built a linked list for each chain. A std::vector in each bucket, which the spec allows, would mean fewer allocations and a simpler rehash that just moves unique_ptrs; I avoided it because I am less familiar with std::vector. I would also give the calculator more descriptive errors than "malformed expression". Finally, I would add operators like exponents, modulo, and square root, which the Project 1 C harness supported while this one does not.
