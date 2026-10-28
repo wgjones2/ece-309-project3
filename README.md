@@ -1,4 +1,4 @@
-# ECE 309 Project 3 (Tool Use and the Tool Registry)
+# ECE 309 Project 3 (Tool Use and the Tool Registry):
 Specs in `P3_spec.md`. Design decisions and measurements are in `docs/design-log-p3.md`.
 
 This project builds off of Project 2 to add tool calls. The model can now call tools (a calculator, plus reading, writing, and listing files) through a registry, and each result is fed back into the conversation as a message.
