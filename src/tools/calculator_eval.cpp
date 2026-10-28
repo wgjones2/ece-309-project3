@@ -9,7 +9,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Precedence helper for operators:
-//times and divide are 2, plus and minus are 1, aleft parenthesis is 0, and undefined is -1
+//times and divide are 2, plus and minus are 1, a left parenthesis is 0, and undefined is -1
 namespace {
 	int precedence(CalcToken::Kind kind) { //check the precedence of the operator
 		if (kind == CalcToken::Kind::Times || kind == CalcToken::Kind::Divide) { //if the operator is times or divide
@@ -61,7 +61,7 @@ bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::st
 			*error = "malformed expression";
 			return false;
 	}
-	return true; //true for successful application of the operator - any fail breaks early
+	return true; //true for successful application of the operator - any failure returns early
 }
 } // namespace end
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ bool apply(std::stack<double>& values, std::stack<CalcToken::Kind>& ops, std::st
 // Evaluates a sequence of CalcTokens and stores the result in "out".
 //returns true if the evaluation is successful, false otherwise
 //if an error occurs, 'error' is set to a descriptive message
-//results in log table should match
+//results should match the table in the log
 bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::string* error) {
 	std::stack<double> values; //stack of numbers
 	std::stack<CalcToken::Kind> ops; //stack of operators and left parentheses
@@ -86,7 +86,7 @@ bool calc_evaluate(const std::vector<CalcToken>& tokens, double* out, std::strin
 					return false; //return false if apply fails
 				}
 			}
-			if (ops.empty()) { //if no matching left parenthesis
+			if (ops.empty()) { //if there is no matching left parenthesis
 				*error = "malformed expression";
 				return false;
 			}

@@ -1,7 +1,6 @@
 // src/tools/tool_registry.cpp — YOU IMPLEMENT (spec §4.3).
 //
 // A hand-written hash table. No std::unordered_map / std::map / std::set.
-// Every function below is a stub so the starter compiles. Replace each body.
 
 #include "tools/tool_registry.h"
 #include <cstdint>
@@ -39,8 +38,8 @@ std::size_t ToolRegistry::hash(std::string_view key) noexcept {
 
 //Add - adds a new tool to the registry if it doesn't already exist, returns true on success, false otherwise
 bool ToolRegistry::add(std::unique_ptr<Tool> tool) { // add a new tool to the registry
-	if (tool == nullptr) {// if tool null
-		return false;  // return flase
+	if (tool == nullptr) {// if the tool is null
+		return false;  // return false
 	}
 	std::string name = tool->name(); //get the tool's name
 	Tool* existing_tool = find(name); // check if a tool with the same name already exists
@@ -58,7 +57,7 @@ bool ToolRegistry::add(std::unique_ptr<Tool> tool) { // add a new tool to the re
 	//make a new node, move the tool into it, and put the node at the front of that bucket's chain
 	std::unique_ptr<Node> new_node = std::make_unique<Node>();
 	new_node->tool = std::move(tool); //transfer ownership of the tool to the new node
-	new_node->next = std::move(buckets_[bucket_index]); //old first becomes the next node after the new node
+	new_node->next = std::move(buckets_[bucket_index]); //the old first node becomes the next node after the new node
 	buckets_[bucket_index] = std::move(new_node); //new node becomes the first node in the bucket's chain
 	++size_; //add one to the tool count
     return true; // return true on successful addition
@@ -89,7 +88,7 @@ std::size_t ToolRegistry::size() const noexcept {
 //For each - applies a function to each tool in the registry
 void ToolRegistry::for_each(const std::function<void(const Tool&)>& fn) const {
 	for (std::size_t i = 0; i < buckets_.size(); ++i) { // for every bucket
-		Node* current = buckets_[i].get(); //get bucket's first node
+		Node* current = buckets_[i].get(); //get the bucket's first node
 		while (current != nullptr) { //while there are more nodes in the chain
 			fn(*current->tool); // call the function on the current tool
 			current = current->next.get(); //move to the next node
@@ -131,7 +130,7 @@ double ToolRegistry::load_factor() const noexcept {
 
 //Max probe length - returns the length of the longest chain in the registry
 std::size_t ToolRegistry::max_probe_length() const {
-	std::size_t max_length = 0; // keep track of the longest chain - 0 defualt
+	std::size_t max_length = 0; // keep track of the longest chain - 0 by default
 	for (std::size_t i = 0; i < buckets_.size(); ++i) { // for each bucket
 		std::size_t length = 0; //set current chain length to 0 - init
 		Node* current = buckets_[i].get(); //get first node of the current bucket's chain

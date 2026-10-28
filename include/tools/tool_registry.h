@@ -72,7 +72,7 @@ public:
 private: // FINISHED PRIVATE SECTION:
 	// Separate chaining:
 	//each bucket is the start of a singly linked list (a chain) of nodes
-	//each node has tool and next node in its chain
+	//each node holds a tool and the next node in its chain
 	struct Node {
         std::unique_ptr<Tool> tool; // owns the tool stored in this node
         std::unique_ptr<Node> next; // owns the next node in the chain (nullptr if this is the last node)
@@ -82,7 +82,7 @@ private: // FINISHED PRIVATE SECTION:
 
 	// Constants:
 	static constexpr std::size_t kInitialBucketCount = 8; //a starting bucket count of 8
-	static constexpr double kMaxLoadFactor = 0.75; //a max load factor of 0.75 (the table grows before it grows beyond this)
+	static constexpr double kMaxLoadFactor = 0.75; //a max load factor of 0.75 (the table grows before the load factor goes above this)
 
 
 	// Data members:
@@ -92,6 +92,6 @@ private: // FINISHED PRIVATE SECTION:
 
 
 	// Private helpers:
-	void rehash(std::size_t new_bucket_count); // moves every node into new buckets - preserve tool pointers
+	void rehash(std::size_t new_bucket_count); // moves every node into new buckets - preserves tool pointers
 	//rehashing will only move node pointers and so the tools never move and pointers remain valid
 };

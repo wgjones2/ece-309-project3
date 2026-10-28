@@ -107,7 +107,7 @@ TEST(reg_null_rejected) {
 }
 
 
-//Test registry for visiting each tool exactly once:
+//Test that the registry visits each tool exactly once:
 TEST(reg_for_each_visits_each_once) {
 	//make a registry and add three NamedTools named "a", "b", and "c"
 	ToolRegistry r;
@@ -131,6 +131,7 @@ TEST(reg_10000_tools) {
 	REQUIRE(r.add(std::make_unique<NamedTool>("tool_0"))); //add "tool_0" and save the pointer that find("tool_0") returns
 	const Tool* tool_0_ptr = r.find("tool_0"); //init
 	REQUIRE(tool_0_ptr != nullptr); // ensure that find("tool_0") returned a valid pointer
+	CHECK(r.load_factor() <= 1.0); //check the load factor after the first add
 	for (int i=1; i<10000; ++i) { //for all tools "tool_1" through "tool_9999"
 		std::string name = "tool_" + std::to_string(i); // construct the tool name "tool_i"
 		bool added = r.add(std::make_unique<NamedTool>(name)); // add the tool to the registry
